@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MumuCoding · AI Coding 六维魔方</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: "PingFang SC", -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
+  color: #1a1a1a; background: #f8f8f5; line-height: 1.6;
+}
+
+/* ── Topbar ── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+  background: rgba(248,248,245,0.88); backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e4e4e0; padding: 10px 0;
+}
+.topbar-inner { max-width: 1300px; margin: 0 auto; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; }
+.topbar-left { display: flex; align-items: center; gap: 24px; }
+.topbar-brand { font-weight: 700; font-size: 15px; color: #111; letter-spacing: -0.2px; text-decoration: none; }
+.topbar-brand span { color: #d94f4f; }
+.topbar-nav { display: flex; gap: 0; }
+.topbar-nav a { font-size: 12px; color: #888; text-decoration: none; padding: 4px 12px; border-radius: 3px; transition: all 0.15s; }
+.topbar-nav a:hover { color: #111; background: #eee; }
+.topbar-gh {
+  font-size: 12px; color: #888; text-decoration: none; padding: 5px 14px;
+  border: 1px solid #e4e4e0; border-radius: 4px; transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+}
+.topbar-gh:hover { border-color: #ccc; color: #111; }
+
+/* ── Hero ── */
+.hero-wrap {
+  padding: 80px 32px 0;
+  max-width: 1300px; margin: 0 auto;
+  display: flex; align-items: center; gap: 48px;
+  min-height: 620px;
+}
+.hero-cube-col { flex: 0 0 560px; }
+#cube-hero { width: 560px; height: 560px; cursor: grab; }
+#cube-hero:active { cursor: grabbing; }
+#cube-hero canvas { display: block; }
+
+.hero-text-col { flex: 1; min-width: 0; }
+.hero-text-col h1 { font-size: 32px; font-weight: 650; color: #111; letter-spacing: -0.3px; line-height: 1.3; margin-bottom: 8px; }
+.hero-text-col .ht-static { font-size: 15px; color: #888; margin-bottom: 28px; }
+
+/* Typewriter area */
+.typewriter-box {
+  min-height: 120px; position: relative;
+}
+.typewriter-line {
+  font-size: 15px; color: #555; line-height: 1.8; padding: 12px 0;
+  border-bottom: 1px solid #f0f0ed; transition: opacity 0.6s ease;
+}
+.typewriter-line:last-child { border-bottom: none; }
+.typewriter-line .tw-dim {
+  font-size: 10px; font-weight: 700; color: #bbb; text-transform: uppercase;
+  letter-spacing: 1px; display: block; margin-bottom: 3px;
+}
+.typewriter-line .tw-text { }
+.typewriter-line .tw-cursor {
+  display: inline-block; width: 8px; height: 15px;
+  background: #d94f4f; vertical-align: text-bottom; margin-left: 2px;
+  animation: blink 0.7s step-end infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+.cube-hint { font-size: 12px; color: #ccc; text-align: center; margin-top: 8px; }
+
+/* ── Tab Section ── */
+.tab-section { max-width: 1300px; margin: 0 auto; padding: 48px 32px 64px; display: flex; gap: 48px; align-items: flex-start; }
+.tab-cube-col { flex: 0 0 400px; position: sticky; top: 80px; }
+#tab-cube { width: 400px; height: 400px; cursor: grab; }
+#tab-cube:active { cursor: grabbing; }
+#tab-cube canvas { display: block; }
+.tab-cube-hint { text-align: center; font-size: 11px; color: #ddd; margin-top: 2px; }
+.tab-content-col { flex: 1; min-width: 0; }
+
+/* ── Tabs ── */
+.tab-bar { display: flex; gap: 0; border-bottom: 1px solid #e4e4e0; margin-bottom: 20px; }
+.tab-btn {
+  padding: 9px 16px; font-size: 13px; font-weight: 500; color: #999;
+  background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.15s; white-space: nowrap;
+}
+.tab-btn:hover { color: #555; }
+.tab-btn.active { color: #111; border-bottom-color: #111; font-weight: 650; }
+.tab-panel { display: none; animation: fadeIn 0.25s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+.tab-panel h3 { font-size: 22px; font-weight: 650; color: #111; margin-bottom: 4px; }
+.tab-panel .tp-desc { font-size: 14px; color: #777; line-height: 1.7; margin-bottom: 16px; }
+
+.sub-blocks { display: flex; flex-direction: column; gap: 1px; background: #e4e4e0; border: 1px solid #e4e4e0; border-radius: 6px; overflow: hidden; }
+.sub-block { background: #fff; padding: 14px 18px; display: flex; align-items: flex-start; gap: 14px; transition: background 0.15s; }
+.sub-block:hover { background: #fdfdfd; }
+.sub-block .sb-icon {
+  width: 28px; height: 28px; border-radius: 4px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 4px;
+  background: transparent; flex-shrink: 0;
+}
+.sb-cube-face { border-radius: 1px; }
+.sb-cube-face.c1 { background: #d5d5d0; }
+.sb-cube-face.c2 { background: #b8b8b4; }
+.sb-cube-face.c3 { background: #9e9e9a; }
+.sb-cube-face.c4 { background: #c8c8c4; }
+.sub-block .sb-info { flex: 1; }
+.sub-block .sb-info h4 { font-size: 13px; font-weight: 650; color: #111; }
+.sub-block .sb-info p { font-size: 12px; color: #999; margin-top: 2px; line-height: 1.5; }
+.sub-block .sb-tools { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+.sub-block .sb-tools span { font-size: 10px; padding: 1px 7px; border-radius: 2px; background: #f8f8f8; color: #aaa; }
+
+/* ── Tools Section ── */
+.tools-section { max-width: 1300px; margin: 0 auto; padding: 48px 32px 64px; border-top: 1px solid #e4e4e0; }
+.tools-section h2 { font-size: 20px; font-weight: 650; color: #111; margin-bottom: 6px; }
+.tools-section .ts-sub { font-size: 13px; color: #aaa; margin-bottom: 24px; }
+.tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.tool-particle {
+  background: #fff; border: 1px solid #e8e8e4; border-radius: 8px; padding: 18px; cursor: pointer;
+  transition: all 0.2s; position: relative; overflow: hidden;
+}
+.tool-particle:hover { border-color: #ccc; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+.tool-particle .tp-cube-icon {
+  width: 32px; height: 32px; margin-bottom: 10px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+}
+.tool-particle .tp-cube-icon .tc-face { border-radius: 2px; background: #e8e8e4; }
+.tool-particle:hover .tp-cube-icon .tc-face { background: #ccc; }
+.tool-particle .tp-name { font-size: 13px; font-weight: 650; color: #111; }
+.tool-particle .tp-dim { font-size: 10px; color: #bbb; margin-top: 2px; }
+.tool-particle .tp-detail {
+  font-size: 12px; color: #999; line-height: 1.6; margin-top: 8px;
+  max-height: 0; overflow: hidden; transition: max-height 0.3s ease, margin-top 0.3s ease;
+}
+.tool-particle.open .tp-detail { max-height: 120px; margin-top: 8px; }
+.tool-particle.open { border-color: #ccc; }
+
+/* ── Landing Zone ── */
+.lz-section { max-width: 1300px; margin: 0 auto; padding: 0 32px 64px; }
+.lz-section h2 { font-size: 20px; font-weight: 650; color: #111; margin-bottom: 20px; }
+.lz-blocks { display: flex; align-items: flex-end; gap: 3px; height: 180px; }
+.lz-block {
+  flex: 1; border-radius: 6px 6px 0 0; display: flex; align-items: flex-end; padding: 20px;
+  transition: all 0.25s; cursor: default;
+}
+.lz-block:hover { filter: brightness(0.96); }
+.lz-block.lz-1 { height: 30%; background: #eaeaea; }
+.lz-block.lz-2 { height: 48%; background: #ddd; }
+.lz-block.lz-3 { height: 70%; background: #ccc; }
+.lz-block.lz-4 { height: 100%; background: #b8b8b8; }
+.lz-block .lz-label { font-size: 13px; font-weight: 650; color: #444; }
+.lz-block .lz-items { font-size: 11px; color: #777; margin-top: 2px; }
+
+/* ── Footer ── */
+.footer { text-align: center; padding: 40px 0; border-top: 1px solid #e4e4e0; }
+.footer p { font-size: 11px; color: #ccc; }
+.footer a { color: #aaa; }
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .hero-wrap { flex-direction: column; padding-top: 90px; }
+  .hero-cube-col { flex: none; width: 100%; }
+  #cube-hero { width: 100%; height: 400px; }
+  .tab-section { flex-direction: column; }
+  .tab-cube-col { flex: none; position: static; width: 100%; }
+  #tab-cube { width: 100%; height: 300px; }
+  .lz-blocks { flex-direction: column; height: auto; }
+  .lz-block { height: 50px !important; border-radius: 4px; }
+  .tools-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .tools-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ Topbar ═══════ -->
+<nav class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <a href="#" class="topbar-brand">Mumu<span>Coding</span></a>
+      <div class="topbar-nav">
+        <a href="#cube-hero">魔方</a>
+        <a href="#dim-tabs">六维度</a>
+        <a href="#g-ladder">G-Ladder</a>
+        <a href="smells.html">坏味道</a>
+        <a href="patterns.html">模式</a>
+        <a href="#quality-gates">质量拦截</a>
+        <a href="lab.html">Lab</a>
+        <a href="assessment.html">自评</a>
+      </div>
+    </div>
+    <a href="https://github.com/lvzhaobo/mumu-coding" target="_blank" class="topbar-gh">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ═══════ Hero: Cube + Typewriter ═══════ -->
+<header class="hero-wrap">
+  <div class="hero-cube-col"><div id="cube-hero"></div></div>
+  <div class="hero-text-col">
+    <h1>AI Coding 六维魔方</h1>
+    <p class="ht-static">WAF 六个架构维度。每个面由多个能力模块组成，每个方块代表一个可独立使用的能力颗粒。</p>
+    <div class="typewriter-box" id="typewriter-box"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:20px">
+      <div id="assemble-count" style="font-size:13px;font-weight:650;color:#bbb">0/27</div>
+      <div class="cube-hint" style="text-align:left;margin-top:0">拖拽旋转 · 每隔 1-2 秒新增一个方块</div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════ Tab Section ═══════ -->
+<section class="tab-section" id="dim-tabs">
+  <div class="tab-cube-col">
+    <div id="tab-cube"></div>
+    <div class="tab-cube-hint">当前维度高亮</div>
+  </div>
+  <div class="tab-content-col">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="d1">D1 意图传递</button>
+      <button class="tab-btn" data-tab="d2">D2 工具连通</button>
+      <button class="tab-btn" data-tab="d3">D3 流程嵌入</button>
+      <button class="tab-btn" data-tab="d4">D4 知识沉淀</button>
+      <button class="tab-btn" data-tab="d5">D5 治理闭环</button>
+      <button class="tab-btn" data-tab="d6">D6 组织演进</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-d1">
+      <h3>意图传递</h3>
+      <p class="tp-desc">需求、边界和验收标准能否被准确、完整地传递给 AI，形成可复现的人机意图对齐。</p>
+      <div class="sub-blocks">
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>需求采集与结构化</h4><p>从多源干系人收拢需求，建立统一的 Spec 编号和索引体系。</p><div class="sb-tools"><span>02-需求采集</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>立项与范围界定</h4><p>定义项目的价值、范围和成功标准。防止 Scope Creep 和需求漂移。</p><div class="sb-tools"><span>03-立项提案</span><span>04-PRD</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>用户故事与验收条件</h4><p>按角色拆分需求，为每个故事写可验证的 AC。是 AI 开发的直接输入。</p><div class="sb-tools"><span>05-用户故事</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>功能规格与交互细节</h4><p>定义每个功能的交互流程、边界条件、状态机和异常处理。</p><div class="sb-tools"><span>06-FSD</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>非功能需求约束</h4><p>定义性能、安全、可用性的底线。这是 AI 生成代码的"护栏"。</p><div class="sb-tools"><span>07-NFR</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-d2">
+      <h3>工具连通</h3>
+      <p class="tp-desc">AI 能否安全地连通真实系统——代码库、数据库、内部 API——且权限边界清晰、访问受控。</p>
+      <div class="sub-blocks">
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>MCP 接入与治理</h4><p>通过标准化协议让 AI 安全访问企业内部系统。核心原则：最小权限、只读默认、操作审批。</p><div class="sb-tools"><span>MCP Server</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>环境隔离与边界控制</h4><p>确保 AI 不会越界访问生产环境。开发/测试/生产三层隔离是基本要求。</p><div class="sb-tools"><span>环境沙箱</span><span>RBAC</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>外部系统集成</h4><p>将内部 API、数据库 Schema、知识库通过结构化的工具描述暴露给 AI。</p><div class="sb-tools"><span>API 目录</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-d3">
+      <h3>流程嵌入</h3>
+      <p class="tp-desc">AI 能力是否嵌入需求评审、开发、测试、代码审查等 SDLC 关键节点，形成自动化的质量门禁。</p>
+      <div class="sub-blocks">
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>PR 共驾评审</h4><p>AI 和人在同一 PR 上协同 Review。AI 第一轮扫描，人第二轮决策。</p><div class="sb-tools"><span>PR 模板</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>测试金字塔嵌入</h4><p>单元→集成→E2E，每层自动生成测试用例并嵌入 CI 流程。</p><div class="sb-tools"><span>13-测试策略</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>质量门禁自动化</h4><p>Lint → 类型检查 → 安全扫描 → 测试覆盖率，全部在 CI 中自动化执行。</p><div class="sb-tools"><span>CI Config</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>变更可见性</h4><p>每次变更关联 Spec 编号和影响分析——"改了什么、为什么、影响了谁"。</p><div class="sb-tools"><span>14-RTM</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-d4">
+      <h3>知识沉淀</h3>
+      <p class="tp-desc">规范与历史决策能否跨会话复用。AI 编码场景下，知识的持续性直接决定长期效果。</p>
+      <div class="sub-blocks">
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>多层 Memory 架构</h4><p>短期记忆→中期记忆→长期记忆，逐层沉淀项目的规范和决策。</p><div class="sb-tools"><span>AGENTS.md</span><span>Rules</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>ADR 决策记录</h4><p>不仅记录"选了 A"，更记录"为什么没选 B"。防止 AI 重复推荐已排除的方案。</p><div class="sb-tools"><span>ADR 模板</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>Skill 资产化</h4><p>把优秀的 Prompt、工作流打包为可复用 Skill，让团队共享而非绑定个人。</p><div class="sb-tools"><span>Skills 库</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>知识保鲜与淘汰</h4><p>知识源需要版本管理和过期清理——过时的上下文比没有更危险。</p><div class="sb-tools"><span>Context Rot 诊断</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-d5">
+      <h3>治理闭环</h3>
+      <p class="tp-desc">质量、安全、审计与度量能否形成可执行的管理闭环。最容易系统性翻车的维度。</p>
+      <div class="sub-blocks">
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>AI 安全门禁</h4><p>从输入注入防护到输出内容审查，建立 AI 编码场景下的安全基线。</p><div class="sb-tools"><span>11-安全设计</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>可追溯性体系</h4><p>需求→设计→代码→测试的完整追溯链路。审计时直接查 RTM。</p><div class="sb-tools"><span>14-RTM</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>效能度量与 ROI</h4><p>量化交付速度、质量和成本的变化，让管理层决策有数据可依。</p><div class="sb-tools"><span>ROI 计算器</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>Harness 基线与回归</h4><p>多 Agent 场景下建立行为基线，升级后自动跑回归验证。</p><div class="sb-tools"><span>Harness 基线</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>复盘闭环</h4><p>每起事件必须产出一项永久性的治理改进措施，不是"存档就结束"。</p><div class="sb-tools"><span>事故复盘模板</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-d6">
+      <h3>组织演进</h3>
+      <p class="tp-desc">AI Coding 能力能否从个人复制到团队与组织，形成可推广的资产和清晰的责任归属。</p>
+      <div class="sub-blocks">
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>试点规模化</h4><p>从 1 个试点团队扩展到全组织——需要标准化培训、认证和可复制资产。</p><div class="sb-tools"><span>成熟度自评</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>AI Coding 推广飞轮</h4><p>资产积累→更多人使用→更多反馈→更好资产，组织资产是正循环引擎。</p><div class="sb-tools"><span>Skill Hub</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>角色与责任归属</h4><p>"AI 生成的 Bug 算谁的？"——组织层面必须有明确答案。</p><div class="sb-tools"><span>责任矩阵</span></div></div></div>
+        <div class="sub-block"><div class="sb-icon"><div class="sb-cube-face c1"></div><div class="sb-cube-face c2"></div><div class="sb-cube-face c3"></div><div class="sb-cube-face c4"></div></div><div class="sb-info"><h4>讲师认证与能力爬坡</h4><p>培养内部 AI Coding 讲师，让方法论不依赖外部顾问就能在组织内传播。</p><div class="sb-tools"><span>三级讲师模型</span></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ G-Ladder ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 64px" id="g-ladder">
+  <div style="border-top:1px solid #e4e4e0;margin-bottom:24px"></div>
+  <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:6px">G-Ladder 能力阶梯</h2>
+  <p style="font-size:13px;color:#aaa;margin-bottom:20px">组织 AI Coding 能力的六个渐进级别。每级增加一层系统化约束，人机责任比随之迁移。G2→G3 是投入产出比最高的跃迁。</p>
+  <div style="display:flex;gap:2px;background:#e4e4e0;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden">
+    <div style="flex:1;background:#fff;padding:20px 14px;text-align:center"><div style="font-size:24px;font-weight:700;color:#ccc">G1</div><div style="font-size:13px;font-weight:650;color:#111;margin-top:4px">裸提示</div><div style="font-size:11px;color:#bbb;margin-top:2px">人 90% : AI 10%</div><div style="font-size:10px;color:#ccc;margin-top:6px;line-height:1.5">无约束<br>个人探索</div></div>
+    <div style="flex:1;background:#fff;padding:20px 14px;text-align:center"><div style="font-size:24px;font-weight:700;color:#bbb">G2</div><div style="font-size:13px;font-weight:650;color:#111;margin-top:4px">规则驱动</div><div style="font-size:11px;color:#bbb;margin-top:2px">人 70% : AI 30%</div><div style="font-size:10px;color:#ccc;margin-top:6px;line-height:1.5">Rules · AGENTS.md<br>代码补全</div></div>
+    <div style="flex:1;background:#fefefe;padding:20px 14px;text-align:center"><div style="font-size:24px;font-weight:700;color:#d94f4f">G3</div><div style="font-size:13px;font-weight:650;color:#111;margin-top:4px">Spec 驱动 ★</div><div style="font-size:11px;color:#bbb;margin-top:2px">人 50% : AI 50%</div><div style="font-size:10px;color:#999;margin-top:6px;line-height:1.5">14 文档体系<br>Spec-First</div></div>
+    <div style="flex:1;background:#fff;padding:20px 14px;text-align:center"><div style="font-size:24px;font-weight:700;color:#bbb">G4</div><div style="font-size:13px;font-weight:650;color:#111;margin-top:4px">Harness</div><div style="font-size:11px;color:#bbb;margin-top:2px">人 30% : AI 70%</div><div style="font-size:10px;color:#ccc;margin-top:6px;line-height:1.5">多 Agent 编排<br>工作流引擎</div></div>
+    <div style="flex:1;background:#fff;padding:20px 14px;text-align:center"><div style="font-size:24px;font-weight:700;color:#bbb">G5</div><div style="font-size:13px;font-weight:650;color:#111;margin-top:4px">评估闭环</div><div style="font-size:11px;color:#bbb;margin-top:2px">人 15% : AI 85%</div><div style="font-size:10px;color:#ccc;margin-top:6px;line-height:1.5">自动质量门禁<br>持续度量</div></div>
+    <div style="flex:1;background:#fff;padding:20px 14px;text-align:center"><div style="font-size:24px;font-weight:700;color:#bbb">G6</div><div style="font-size:13px;font-weight:650;color:#111;margin-top:4px">完全自主</div><div style="font-size:11px;color:#bbb;margin-top:2px">人 5% : AI 95%</div><div style="font-size:10px;color:#ccc;margin-top:6px;line-height:1.5">自治理<br>全链路闭环</div></div>
+  </div>
+</section>
+
+<!-- ═══════ Three Paradigms ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 64px" id="paradigms">
+  <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:6px">三范式演进</h2>
+  <p style="font-size:13px;color:#aaa;margin-bottom:16px">AI Coding 不是一种编码风格，而是研发范式的演进。每一代在人机责任分配和需求管理上存在本质差异。</p>
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden;font-size:13px">
+    <thead><tr style="background:#fafafa"><th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e4e4e0"></th><th style="padding:12px 16px;text-align:left;border-bottom:1px solid #e4e4e0;color:#888">Vibe Coding</th><th style="padding:12px 16px;text-align:left;border-bottom:1px solid #e4e4e0;color:#d94f4f;font-weight:650">Spec-Driven ← 核心定位</th><th style="padding:12px 16px;text-align:left;border-bottom:1px solid #e4e4e0;color:#888">Agentic</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">核心动作</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">对话式编码</td><td style="padding:10px 16px;color:#d94f4f;border-bottom:1px solid #f5f5f5">规格先行，Spec 为契约</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">多 Agent 自主编排</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">人机责任</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">人主导</td><td style="padding:10px 16px;color:#d94f4f;border-bottom:1px solid #f5f5f5">人定义 · AI 执行</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">AI 主导 · 人监督</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">需求管理</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">隐式（对话中）</td><td style="padding:10px 16px;color:#d94f4f;border-bottom:1px solid #f5f5f5">显式（14 文档化）</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">自动追踪</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">变更追溯</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">不可追溯</td><td style="padding:10px 16px;color:#d94f4f;border-bottom:1px solid #f5f5f5">RTM 自动追溯</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">完整审计日志</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">合规审计</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">几乎无法满足</td><td style="padding:10px 16px;color:#d94f4f;border-bottom:1px solid #f5f5f5">14 文档天然留痕</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">自动生成审计报告</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111">适用场景</td><td style="padding:10px 16px;color:#888">原型 · 一次性脚本</td><td style="padding:10px 16px;color:#d94f4f">生产功能 · 团队协作</td><td style="padding:10px 16px;color:#888">复杂系统 · 合规场景</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ═══════ WAF Loop: 诊断 → 治疗 → 复查 ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 64px" id="waf-loop">
+  <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:6px">诊断 → 治疗 → 复查 · WAF 闭环</h2>
+  <p style="font-size:13px;color:#aaa;margin-bottom:16px">六个维度不是静态的分类，而是贯穿三种活动的治理闭环。三者共享同一组六维坐标。</p>
+  <div style="display:flex;gap:2px;background:#e4e4e0;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden">
+    <div style="flex:1;background:#fff;padding:24px"><div style="font-size:11px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">诊断 · 看</div><div style="font-size:14px;font-weight:650;color:#111;margin-bottom:4px">27 个坏味道</div><p style="font-size:12px;color:#999;line-height:1.6">覆盖六个维度的反模式识别。用负向语言描述——缺了什么、断了什么。</p><div style="font-size:10px;color:#ccc;margin-top:8px">"你的体系在这六个维度上得了什么病"</div><a href="smells.html" style="font-size:11px;color:#d94f4f;text-decoration:none;font-weight:500;display:inline-block;margin-top:8px">查看全部 27 个坏味道 →</a></div>
+    <div style="flex:1;background:#fff;padding:24px"><div style="font-size:11px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">治疗 · 打</div><div style="font-size:14px;font-weight:650;color:#111;margin-bottom:4px">31 个设计模式</div><p style="font-size:12px;color:#999;line-height:1.6">每个坏味道对应首选模式 + 辅助模式。用正向语言描述——建立了什么、打通了什么。</p><div style="font-size:10px;color:#ccc;margin-top:8px">"每个维度上的病怎么治"</div><a href="patterns.html" style="font-size:11px;color:#d94f4f;text-decoration:none;font-weight:500;display:inline-block;margin-top:8px">查看全部 31 个设计模式 →</a></div>
+    <div style="flex:1;background:#fff;padding:24px"><div style="font-size:11px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">复查 · 测</div><div style="font-size:14px;font-weight:650;color:#111;margin-bottom:4px">5 级 × 6 维成熟度</div><p style="font-size:12px;color:#999;line-height:1.6">治理后的效果度量。进入下一轮循环——持续诊断，永不结束。</p><div style="font-size:10px;color:#ccc;margin-top:8px">"六个维度各自治到了什么程度"</div></div>
+  </div>
+</section>
+
+<!-- ═══════ Spec 14 Cards ═══════ -->
+<!-- ═══════ Spec 14 — Architecture Diagram ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 64px" id="spec-docs">
+  <div style="border-top:1px solid #e4e4e0;margin-bottom:24px"></div>
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
+    <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:0">Spec 14 文档体系</h2>
+    <a href="spec-console-bl-v4.html" style="font-size:12px;color:#d94f4f;text-decoration:none;font-weight:500">Spec Console →</a>
+    <a href="https://github.com/lvzhaobo/mumu-coding/tree/main/spec/template" target="_blank" style="font-size:12px;color:#888;text-decoration:none;font-weight:500">GitHub 模板 →</a>
+  </div>
+  <p style="font-size:13px;color:#aaa;margin-bottom:28px">一套可追溯、可校验、可交付的工程规约。人和 AI 在同一个 Spec 上工作。三级分级机制：80% 的变更仅需轻量流程。</p>
+
+  <!-- Flow architecture diagram -->
+  <div style="background:#fff;border:1px solid #e4e4e0;border-radius:8px;padding:32px 24px;margin-bottom:20px;overflow-x:auto">
+    <div style="display:flex;align-items:center;justify-content:center;gap:0;min-width:900px">
+      <!-- Phase 1: Meta -->
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+        <div style="font-size:9px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:1px">Meta</div>
+        <div style="display:flex;gap:6px">
+          <div style="width:56px;height:56px;border:1.5px solid #e4e4e0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#111;background:#fafafa">01</div>
+          <div style="width:56px;height:56px;border:1.5px solid #e4e4e0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#111;background:#fafafa">02</div>
+        </div>
+        <div style="font-size:10px;color:#aaa">需求源</div>
+      </div>
+      <div style="color:#ddd;font-size:20px;padding:0 8px">→</div>
+      <!-- Phase 2: Proposal -->
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+        <div style="font-size:9px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:1px">Proposal</div>
+        <div style="display:flex;gap:6px">
+          <div style="width:64px;height:64px;border:2px solid #d94f4f;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#d94f4f;background:#fef8f8">03</div>
+          <div style="width:64px;height:64px;border:2px solid #d94f4f;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#d94f4f;background:#fef8f8">04</div>
+        </div>
+        <div style="font-size:10px;color:#d94f4f;font-weight:600">立项与需求</div>
+      </div>
+      <div style="color:#ddd;font-size:20px;padding:0 8px">→</div>
+      <!-- Phase 3: Spec Core -->
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center;background:#fafafa;border-radius:8px;padding:12px 16px;border:1px solid #f0f0ed">
+        <div style="font-size:9px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:1px">Spec Core</div>
+        <div style="display:flex;gap:6px">
+          <div style="width:60px;height:60px;border:1.5px solid #d4d4d0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#111;background:#fff">05</div>
+          <div style="width:60px;height:60px;border:1.5px solid #d4d4d0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#111;background:#fff">06</div>
+          <div style="width:60px;height:60px;border:1.5px solid #d4d4d0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#111;background:#fff">07</div>
+        </div>
+        <div style="font-size:10px;color:#999">用户故事 · 功能规格 · NFR</div>
+      </div>
+      <div style="color:#ddd;font-size:20px;padding:0 8px">→</div>
+      <!-- Phase 4: Design -->
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+        <div style="font-size:9px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:1px">Design</div>
+        <div style="display:flex;gap:4px">
+          <div style="width:50px;height:50px;border:1.5px solid #e4e4e0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#111;background:#fff">08</div>
+          <div style="width:50px;height:50px;border:1.5px solid #e4e4e0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#111;background:#fff">09</div>
+          <div style="width:50px;height:50px;border:1.5px solid #e4e4e0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#111;background:#fff">10</div>
+          <div style="width:50px;height:50px;border:1.5px solid #e4e4e0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#111;background:#fff">11</div>
+        </div>
+        <div style="font-size:10px;color:#aaa">架构·API·数据·安全</div>
+      </div>
+      <div style="color:#ddd;font-size:20px;padding:0 8px">→</div>
+      <!-- Phase 5: Execution -->
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+        <div style="font-size:9px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:1px">Exec</div>
+        <div style="display:flex;gap:6px">
+          <div style="width:56px;height:56px;border:1.5px solid #e4e4e0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#111;background:#fafafa">12</div>
+          <div style="width:56px;height:56px;border:1.5px solid #e4e4e0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#111;background:#fafafa">13</div>
+        </div>
+        <div style="font-size:10px;color:#aaa">实施与测试</div>
+      </div>
+      <div style="color:#ddd;font-size:20px;padding:0 8px">→</div>
+      <!-- Phase 6: Trace -->
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+        <div style="font-size:9px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:1px">Trace</div>
+        <div style="width:72px;height:72px;border:2px solid #d94f4f;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#d94f4f;background:#fef8f8">14</div>
+        <div style="font-size:10px;color:#d94f4f;font-weight:600">RTM 追溯</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document cards -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#e4e4e0;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden">
+    <!-- 01 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#888;flex-shrink:0">01</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">写作总则</div><div style="font-size:11px;color:#aaa;line-height:1.5">整套 Spec 的"语法书"。术语表、格式规范、AI 辅助规范。</div><div style="font-size:10px;color:#ccc;margin-top:3px">架构师维护</div></div>
+    </div>
+    <!-- 02 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#888;flex-shrink:0">02</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">需求采集</div><div style="font-size:11px;color:#aaa;line-height:1.5">原始需求来源、干系人清单、业务背景。输入起点。</div><div style="font-size:10px;color:#ccc;margin-top:3px">PM 维护</div></div>
+    </div>
+    <!-- 03 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#d94f4f;flex-shrink:0">03</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">立项提案</div><div style="font-size:11px;color:#aaa;line-height:1.5">项目价值论证、范围界定、成功标准、风险评估。P0 优先级。</div><div style="font-size:10px;color:#ccc;margin-top:3px">PM 维护</div></div>
+    </div>
+    <!-- 04 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#d94f4f;flex-shrink:0">04</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">产品需求 PRD</div><div style="font-size:11px;color:#aaa;line-height:1.5">用户画像、功能清单、用户旅程、业务规则。AI 生成的直接输入。</div><div style="font-size:10px;color:#ccc;margin-top:3px">PM 维护</div></div>
+    </div>
+    <!-- 05 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#d94f4f;flex-shrink:0">05</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">用户故事</div><div style="font-size:11px;color:#aaa;line-height:1.5">含 AC 验收条件。P0 优先级。按角色拆分，可直接转为开发任务。</div><div style="font-size:10px;color:#ccc;margin-top:3px">PM + Dev</div></div>
+    </div>
+    <!-- 06 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#d94f4f;flex-shrink:0">06</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">功能规格 FSD</div><div style="font-size:11px;color:#aaa;line-height:1.5">交互流程、边界条件、状态机、异常处理。开发者的核心输入。</div><div style="font-size:10px;color:#ccc;margin-top:3px">PM + 前端</div></div>
+    </div>
+    <!-- 07 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#888;flex-shrink:0">07</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">非功能需求 NFR</div><div style="font-size:11px;color:#aaa;line-height:1.5">性能、可用性、安全、兼容性底线。AI 输出质量的护栏。</div><div style="font-size:10px;color:#ccc;margin-top:3px">架构师维护</div></div>
+    </div>
+    <!-- 08 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#888;flex-shrink:0">08</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">架构选型</div><div style="font-size:11px;color:#aaa;line-height:1.5">技术栈对比、关键决策记录 ADR。后端和基础架构开发的依据。</div><div style="font-size:10px;color:#ccc;margin-top:3px">架构师维护</div></div>
+    </div>
+    <!-- 09 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#d94f4f;flex-shrink:0">09</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">API 契约</div><div style="font-size:11px;color:#aaa;line-height:1.5">接口定义、请求/响应格式、错误码。前后端并行开发的依据。</div><div style="font-size:10px;color:#ccc;margin-top:3px">架构师 + 后端</div></div>
+    </div>
+    <!-- 10 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#d94f4f;flex-shrink:0">10</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">数据模型</div><div style="font-size:11px;color:#aaa;line-height:1.5">ER 图、表结构、索引策略、数据流。数据库设计和迁移的依据。</div><div style="font-size:10px;color:#ccc;margin-top:3px">后端 / DBA</div></div>
+    </div>
+    <!-- 11 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#888;flex-shrink:0">11</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">安全设计</div><div style="font-size:11px;color:#aaa;line-height:1.5">攻击面分析、权限模型、安全控制措施。合规审计的直接依据。</div><div style="font-size:10px;color:#ccc;margin-top:3px">安全工程师</div></div>
+    </div>
+    <!-- 12 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#888;flex-shrink:0">12</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">实施计划</div><div style="font-size:11px;color:#aaa;line-height:1.5">里程碑、WBS、依赖关系、回滚方案。项目管理的依据。</div><div style="font-size:10px;color:#ccc;margin-top:3px">技术负责人</div></div>
+    </div>
+    <!-- 13 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#d94f4f;flex-shrink:0">13</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">测试策略</div><div style="font-size:11px;color:#aaa;line-height:1.5">测试范围、策略、通过标准、自动化策略。P0 优先级。</div><div style="font-size:10px;color:#ccc;margin-top:3px">QA 维护</div></div>
+    </div>
+    <!-- 14 -->
+    <div style="background:#fff;padding:20px 22px;display:flex;gap:14px">
+      <div style="width:36px;height:36px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#d94f4f;flex-shrink:0">14</div>
+      <div><div style="font-size:13px;font-weight:650;color:#111;margin-bottom:2px">追溯矩阵 RTM</div><div style="font-size:11px;color:#aaa;line-height:1.5">需求→设计→代码→测试双向追溯。变更时自动识别影响链。</div><div style="font-size:10px;color:#ccc;margin-top:3px">QA / PM</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ 七层质量拦截 ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 64px" id="quality-gates">
+  <div style="border-top:1px solid #e4e4e0;margin-bottom:24px"></div>
+  <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:6px">七层质量拦截体系</h2>
+  <p style="font-size:13px;color:#aaa;margin-bottom:24px">从代码生成到生产部署的七层分层拦截。核心原则：拦截越早，成本越低——L0 层拦截一个问题的成本约为 L6 层的 1/100。</p>
+
+  <!-- Visual arches -->
+  <div style="display:flex;align-items:flex-end;gap:3px;margin-bottom:8px;height:220px">
+    <div style="flex:1;height:100%;background:#fff;border:1px solid #e4e4e0;border-radius:8px 8px 4px 4px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px 8px;text-align:center">
+      <div style="font-size:24px;font-weight:700;color:#444;margin-bottom:4px">L0</div>
+      <div style="font-size:12px;font-weight:650;color:#111;line-height:1.5">写时约束</div>
+      <div style="font-size:10px;color:#aaa;margin-top:4px;line-height:1.4">Spec · Rules<br>引导正确方向</div>
+      <div style="margin-top:auto;font-size:9px;color:#bbb;padding-bottom:6px">AI 辅助</div>
+    </div>
+    <div style="flex:1;height:92%;background:#fff;border:1px solid #e4e4e0;border-radius:8px 8px 4px 4px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 8px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:#555;margin-bottom:4px">L1</div>
+      <div style="font-size:12px;font-weight:650;color:#111;line-height:1.5">IDE 检查</div>
+      <div style="font-size:10px;color:#aaa;margin-top:4px;line-height:1.4">语法 · 类型<br>格式校验</div>
+      <div style="margin-top:auto;font-size:9px;color:#bbb;padding-bottom:6px">实时自动</div>
+    </div>
+    <div style="flex:1;height:84%;background:#fff;border:1px solid #e4e4e0;border-radius:8px 8px 4px 4px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 8px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:#555;margin-bottom:4px">L2</div>
+      <div style="font-size:12px;font-weight:650;color:#111;line-height:1.5">提交前钩子</div>
+      <div style="font-size:10px;color:#aaa;margin-top:4px;line-height:1.4">Lint · 单元测试<br>提交前阻断</div>
+      <div style="margin-top:auto;font-size:9px;color:#bbb;padding-bottom:6px">Git Hook</div>
+    </div>
+    <div style="flex:1;height:76%;background:#fff;border:1px solid #e4e4e0;border-radius:8px 8px 4px 4px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 8px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:#555;margin-bottom:4px">L3</div>
+      <div style="font-size:12px;font-weight:650;color:#111;line-height:1.5">推送钩子</div>
+      <div style="font-size:10px;color:#aaa;margin-top:4px;line-height:1.4">分支保护<br>PR 检查项</div>
+      <div style="margin-top:auto;font-size:9px;color:#bbb;padding-bottom:6px">Git Server</div>
+    </div>
+    <div style="flex:1;height:65%;background:#fff;border:1px solid #e4e4e0;border-radius:8px 8px 4px 4px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 8px;text-align:center">
+      <div style="font-size:20px;font-weight:700;color:#555;margin-bottom:4px">L4</div>
+      <div style="font-size:12px;font-weight:650;color:#111;line-height:1.5">CI 扫描</div>
+      <div style="font-size:10px;color:#aaa;margin-top:4px;line-height:1.4">静态分析<br>依赖漏洞</div>
+      <div style="margin-top:auto;font-size:9px;color:#bbb;padding-bottom:6px">CI Pipeline</div>
+    </div>
+    <div style="flex:1.2;height:50%;background:#fef8f8;border:1px solid #e8c8c8;border-radius:8px 8px 4px 4px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 8px;text-align:center">
+      <div style="font-size:18px;font-weight:700;color:#d94f4f;margin-bottom:4px">L5</div>
+      <div style="font-size:12px;font-weight:650;color:#111;line-height:1.5">代码评审</div>
+      <div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">AI Review +<br>人工 Review</div>
+      <div style="margin-top:auto;font-size:9px;color:#c88;padding-bottom:6px">人机协作</div>
+    </div>
+    <div style="flex:1.4;height:38%;background:#fff;border:1px solid #e4e4e0;border-radius:8px 8px 4px 4px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 8px;text-align:center">
+      <div style="font-size:18px;font-weight:700;color:#888;margin-bottom:4px">L6</div>
+      <div style="font-size:12px;font-weight:650;color:#111;line-height:1.5">部署前扫描</div>
+      <div style="font-size:10px;color:#aaa;margin-top:4px;line-height:1.4">自动化测试<br>安全扫描</div>
+      <div style="margin-top:auto;font-size:9px;color:#bbb;padding-bottom:6px">CD Gate</div>
+    </div>
+  </div>
+  <!-- Labels below -->
+  <div style="display:flex;gap:3px;margin-top:8px;font-size:10px;color:#ccc">
+    <div style="flex:1;text-align:center">写代码时</div>
+    <div style="flex:1;text-align:center">保存时</div>
+    <div style="flex:1;text-align:center">commit 时</div>
+    <div style="flex:1;text-align:center">push 时</div>
+    <div style="flex:1;text-align:center">CI 时</div>
+    <div style="flex:1.2;text-align:center">PR 时</div>
+    <div style="flex:1.4;text-align:center">上线前</div>
+  </div>
+  <p style="font-size:11px;color:#ccc;margin-top:16px;text-align:center">
+    L0 成本最低 ← 每一层拦截比前一层成本高约 1-2 个数量级 → L6 成本最高
+  </p>
+</section>
+
+<!-- ═══════ Hands-on Labs ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 64px" id="labs">
+  <div style="border-top:1px solid #e4e4e0;margin-bottom:24px"></div>
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
+    <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:0">Hands-on Lab 实验库</h2>
+    <a href="lab.html" style="font-size:12px;color:#d94f4f;text-decoration:none;font-weight:500">打开 Lab Console →</a>
+  </div>
+  <p style="font-size:13px;color:#aaa;margin-bottom:20px">覆盖六个 WAF 维度的动手实验。每个 Lab 含任务文档和验收标准，可直接用于企业内训。</p>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#e4e4e0;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden">
+    <div style="background:#fff;padding:20px 22px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:28px;height:28px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#d94f4f">P1</div>
+        <div style="font-size:13px;font-weight:650;color:#111">意图传递</div>
+      </div>
+      <div style="font-size:11px;color:#aaa;line-height:1.8">
+        Lab 1 · 填写 Proposal 文档<br>
+        Lab 2 · Spec 转代码实操<br>
+        Lab 3 · 618 促销 Spec 全流程
+      </div>
+    </div>
+    <div style="background:#fff;padding:20px 22px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:28px;height:28px;border-radius:4px;background:#fef9f0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#b8860b">P2</div>
+        <div style="font-size:13px;font-weight:650;color:#111">工具连通</div>
+      </div>
+      <div style="font-size:11px;color:#aaa;line-height:1.8">
+        Lab 4 · 搭建 MCP Server<br>
+        Lab 5 · AGENTS.md 配置实战<br>
+        Lab 6 · Rules 分层护栏
+      </div>
+    </div>
+    <div style="background:#fff;padding:20px 22px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:28px;height:28px;border-radius:4px;background:#f0f5f0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#5a8a5a">P3</div>
+        <div style="font-size:13px;font-weight:650;color:#111">流程嵌入</div>
+      </div>
+      <div style="font-size:11px;color:#aaa;line-height:1.8">
+        Lab 7 · AI Code Review 工作流<br>
+        Lab 8 · CI/CD 质量门禁集成<br>
+        Lab 9 · PR 共驾评审
+      </div>
+    </div>
+    <div style="background:#fff;padding:20px 22px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:28px;height:28px;border-radius:4px;background:#f4f0f8;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7755aa">P4</div>
+        <div style="font-size:13px;font-weight:650;color:#111">知识沉淀</div>
+      </div>
+      <div style="font-size:11px;color:#aaa;line-height:1.8">
+        Lab 10 · Memory 架构配置<br>
+        Lab 11 · ADR 自动生成<br>
+        Lab 12 · Skill Hub 搭建
+      </div>
+    </div>
+    <div style="background:#fff;padding:20px 22px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:28px;height:28px;border-radius:4px;background:#fef3f3;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#d94f4f">P5</div>
+        <div style="font-size:13px;font-weight:650;color:#111">治理闭环</div>
+      </div>
+      <div style="font-size:11px;color:#aaa;line-height:1.8">
+        Lab 13 · AI 安全门禁配置<br>
+        Lab 14 · ROI 计算器实战<br>
+        Lab 15 · 合规追溯演练
+      </div>
+    </div>
+    <div style="background:#fff;padding:20px 22px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:28px;height:28px;border-radius:4px;background:#f0f5f5;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#448888">P6</div>
+        <div style="font-size:13px;font-weight:650;color:#111">组织演进</div>
+      </div>
+      <div style="font-size:11px;color:#aaa;line-height:1.8">
+        Lab 16 · 成熟度自评 Workshop<br>
+        Lab 17 · 讲师认证演练<br>
+        Lab 18 · 试点规模化推演
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ Maturity Model — Radar Charts ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 64px" id="maturity">
+  <div style="border-top:1px solid #e4e4e0;margin-bottom:24px"></div>
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
+    <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:0">E-ACMM 成熟度模型</h2>
+    <a href="canvas/knowledge-hub/ai-coding-maturity.html" style="font-size:12px;color:#d94f4f;text-decoration:none;font-weight:500">在线自评 →</a>
+  </div>
+  <p style="font-size:13px;color:#aaa;margin-bottom:28px">五级成熟度 × 六大维度 × 30 题。短板原则：整体级别由最弱的支柱决定。</p>
+
+  <div style="display:flex;gap:20px;flex-wrap:wrap">
+    <!-- Radar: L1-L5 at-a-glance -->
+    <div style="flex:1;min-width:400px;background:#fff;border:1px solid #e4e4e0;border-radius:8px;padding:28px">
+      <h3 style="font-size:14px;font-weight:650;color:#111;margin-bottom:16px;text-align:center">六级能力雷达 · 各级别典型轮廓</h3>
+      <canvas id="radar-main" style="width:100%;max-height:380px"></canvas>
+    </div>
+    <!-- Level descriptions -->
+    <div style="flex:1;min-width:360px">
+      <div style="display:flex;flex-direction:column;gap:1px;background:#e4e4e0;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden">
+        <div style="background:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:32px;height:32px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#999">L1</div>
+          <div><div style="font-size:13px;font-weight:650;color:#111">个人探索</div><div style="font-size:11px;color:#bbb">组织看不见，使用在发生</div></div>
+        </div>
+        <div style="background:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:32px;height:32px;border-radius:50%;background:#e8e0d0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#b8860b">L2</div>
+          <div><div style="font-size:13px;font-weight:650;color:#111">企业试点</div><div style="font-size:11px;color:#bbb">试点团队顺手，跨团队推不动</div></div>
+        </div>
+        <div style="background:#fefefe;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:32px;height:32px;border-radius:50%;background:#d94f4f;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">L3</div>
+          <div><div style="font-size:13px;font-weight:650;color:#111">全面使用</div><div style="font-size:11px;color:#d94f4f">能力长进组织骨架 ★ 多数企业目标</div></div>
+        </div>
+        <div style="background:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:32px;height:32px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#666">L4</div>
+          <div><div style="font-size:13px;font-weight:650;color:#111">量化驱动</div><div style="font-size:11px;color:#bbb">数据真的改变决策</div></div>
+        </div>
+        <div style="background:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:32px;height:32px;border-radius:50%;background:#bbb;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#444">L5</div>
+          <div><div style="font-size:13px;font-weight:650;color:#111">研发范式</div><div style="font-size:11px;color:#bbb">从追赶者变成定义者</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Four small radars: industry snapshots -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:#e4e4e0;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden;margin-top:20px">
+    <div style="background:#fff;padding:20px;text-align:center">
+      <div style="font-size:12px;font-weight:650;color:#111;margin-bottom:10px">互联网头部</div>
+      <canvas id="radar-internet" style="width:100%;max-height:160px"></canvas>
+      <div style="font-size:10px;color:#aaa;margin-top:6px">L2-L3</div>
+    </div>
+    <div style="background:#fff;padding:20px;text-align:center">
+      <div style="font-size:12px;font-weight:650;color:#111;margin-bottom:10px">金融行业</div>
+      <canvas id="radar-finance" style="width:100%;max-height:160px"></canvas>
+      <div style="font-size:10px;color:#aaa;margin-top:6px">L2 为主</div>
+    </div>
+    <div style="background:#fff;padding:20px;text-align:center">
+      <div style="font-size:12px;font-weight:650;color:#111;margin-bottom:10px">制造业 / 政务</div>
+      <canvas id="radar-manufacture" style="width:100%;max-height:160px"></canvas>
+      <div style="font-size:10px;color:#aaa;margin-top:6px">L1 为主</div>
+    </div>
+    <div style="background:#fff;padding:20px;text-align:center">
+      <div style="font-size:12px;font-weight:650;color:#111;margin-bottom:10px">AI 原生公司</div>
+      <canvas id="radar-native" style="width:100%;max-height:160px"></canvas>
+      <div style="font-size:10px;color:#aaa;margin-top:6px">L3-L4</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ Tools Particles ═══════ -->
+<section class="tools-section" id="tools">
+  <h2>魔方上的工具颗粒</h2>
+  <p class="ts-sub">每个颗粒是魔方上的一个能力模块——可独立使用，点击查看详情。</p>
+  <div class="tools-grid">
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">Spec 14 文档模板</div><div class="tp-dim">D1 意图传递</div><div class="tp-detail">从需求采集到追溯矩阵。含三级分级机制，80% 的变更仅需轻量流程。提供空白模板和 618 场景填充示例。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">AGENTS.md</div><div class="tp-dim">D4 知识沉淀</div><div class="tp-detail">AI Agent 的角色定义文件。含角色身份、能力清单、行为边界、工作流程和输出规范。投入 30 分钟显著提升 AI 输出质量。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">MCP Server</div><div class="tp-dim">D2 工具连通</div><div class="tp-detail">基于 Anthropic Model Context Protocol，将内部 API、数据库、知识库以标准化协议暴露给 AI Agent。最小权限、只读默认。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">成熟度 30 题自评</div><div class="tp-dim">D6 组织演进</div><div class="tp-detail">5 级 × 6 维度 × 30 题。15 分钟完成，自动生成诊断报告。回答"我的团队现在在哪一级，下一步该做什么"。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">七层质量拦截</div><div class="tp-dim">D3 流程嵌入</div><div class="tp-detail">L0 写时约束→L6 部署前扫描。越早拦截成本越低——L0 的成本约为 L6 的 1/100。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">28 坏味道清单</div><div class="tp-dim">全部六维度</div><div class="tp-detail">覆盖六个维度的反模式清单。每个含危险等级、典型症状、维度和对应设计模式。8 高危·19 中危·1 注意。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">ROI 计算器</div><div class="tp-dim">D5 治理闭环</div><div class="tp-detail">基于 DORA + AI 采纳率的三层度量模型。量化交付速度、质量和成本的变化。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">编码模式决策树</div><div class="tp-dim">D1 意图传递</div><div class="tp-detail">Vibe/Glue/TDD/Spec/Harness。三个问题确定用什么：生命周期>3月？协作人数？代码规模？</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">Landing Zone 准备清单</div><div class="tp-dim">D6 组织演进</div><div class="tp-detail">三层地基的逐项准备清单：约束层→上下文层→规格层。每层可独立验证、独立产生 ROI。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">AI 安全门禁</div><div class="tp-dim">D5 治理闭环</div><div class="tp-detail">输入注入防护、输出内容审查、代码安全扫描。在 CI 流水线中自动化执行。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">618 促销案例</div><div class="tp-dim">D1 意图传递</div><div class="tp-detail">电商大促场景下的完整 Spec 实践。需求变更响应从 2 天降至 10 分钟。</div></div>
+    <div class="tool-particle" onclick="this.classList.toggle('open')"><div class="tp-cube-icon"><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div><div class="tc-face"></div></div><div class="tp-name">Spec Skills（Cursor）</div><div class="tp-dim">D1 意图传递</div><div class="tp-detail">11 个 Cursor Skills，四轮工作流，自动化 Spec 文档编写、维护和门禁验证。</div></div>
+  </div>
+</section>
+
+<!-- ═══════ Landing Zone ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 64px" id="landing-zone">
+  <div style="border-top:1px solid #e4e4e0;margin-bottom:24px"></div>
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
+    <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:0">Landing Zone — 用积木铺成的路</h2>
+    <a href="https://github.com/lvzhaobo/mumu-coding/tree/main/landing-zone" target="_blank" style="font-size:12px;color:#d94f4f;text-decoration:none;font-weight:500">GitHub 准备清单 →</a>
+  </div>
+  <p style="font-size:13px;color:#aaa;margin-bottom:20px">企业引入 AI Coding 前需按序铺设三层地基 + 扩展层。借鉴云计算 Landing Zone 的分层原则——每层独立交付价值，不依赖上层。</p>
+
+  <!-- Visual blocks -->
+  <div class="lz-blocks">
+    <div class="lz-block lz-1"><div><div class="lz-label">约束层</div><div class="lz-items">AGENTS.md · 门禁</div></div></div>
+    <div class="lz-block lz-2"><div><div class="lz-label">上下文层</div><div class="lz-items">Rules · 记忆库</div></div></div>
+    <div class="lz-block lz-3"><div><div class="lz-label">规格层</div><div class="lz-items">14 文档体系</div></div></div>
+    <div class="lz-block lz-4"><div><div class="lz-label">扩展层</div><div class="lz-items">Skills · MCP · 知识平台</div></div></div>
+  </div>
+
+  <!-- Layer detail cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:#e4e4e0;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden;margin-top:20px">
+    <div style="background:#fff;padding:22px 20px">
+      <div style="font-size:11px;font-weight:700;color:#d94f4f;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">第 1 层 · 1-2 周</div>
+      <div style="font-size:14px;font-weight:650;color:#111;margin-bottom:8px">约束层</div>
+      <div style="font-size:11px;color:#888;line-height:1.7">
+        <div style="margin-bottom:3px">· AGENTS.md 角色定义</div>
+        <div style="margin-bottom:3px">· 七层质量拦截配置</div>
+        <div style="margin-bottom:3px">· Pre-commit Hook</div>
+        <div style="margin-bottom:3px">· CI 基础门禁</div>
+        <div>· 安全基线初版</div>
+      </div>
+      <div style="font-size:10px;color:#ccc;margin-top:10px">独立价值：立即降低 AI 输出错误率</div>
+    </div>
+    <div style="background:#fff;padding:22px 20px">
+      <div style="font-size:11px;font-weight:700;color:#b8860b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">第 2 层 · 2-4 周</div>
+      <div style="font-size:14px;font-weight:650;color:#111;margin-bottom:8px">上下文层</div>
+      <div style="font-size:11px;color:#888;line-height:1.7">
+        <div style="margin-bottom:3px">· 项目结构约定与 README</div>
+        <div style="margin-bottom:3px">· 团队 Rules 编码规范</div>
+        <div style="margin-bottom:3px">· 团队记忆库（AGENTS.md v2）</div>
+        <div style="margin-bottom:3px">· Context Rot 诊断</div>
+        <div>· 知识源版本管理</div>
+      </div>
+      <div style="font-size:10px;color:#ccc;margin-top:10px">独立价值：AI 输出从"可用"到"正确"</div>
+    </div>
+    <div style="background:#fff;padding:22px 20px">
+      <div style="font-size:11px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">第 3 层 · 4-8 周</div>
+      <div style="font-size:14px;font-weight:650;color:#111;margin-bottom:8px">规格层</div>
+      <div style="font-size:11px;color:#888;line-height:1.7">
+        <div style="margin-bottom:3px">· 14 文档体系（Proposal→RTM）</div>
+        <div style="margin-bottom:3px">· Spec 三级分级机制</div>
+        <div style="margin-bottom:3px">· Spec Freeze 冻结流程</div>
+        <div style="margin-bottom:3px">· 对齐会制度（L2 标准流程）</div>
+        <div>· PR-Spec 关联校验</div>
+      </div>
+      <div style="font-size:10px;color:#ccc;margin-top:10px">独立价值：实现跨角色、跨团队协作</div>
+    </div>
+    <div style="background:#fff;padding:22px 20px">
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">扩展层 · 持续演进</div>
+      <div style="font-size:14px;font-weight:650;color:#111;margin-bottom:8px">技能与生态</div>
+      <div style="font-size:11px;color:#888;line-height:1.7">
+        <div style="margin-bottom:3px">· Skills 资产库</div>
+        <div style="margin-bottom:3px">· MCP Server 接入</div>
+        <div style="margin-bottom:3px">· 企业知识平台</div>
+        <div style="margin-bottom:3px">· 多 Agent 编排</div>
+        <div>· ROI 度量体系</div>
+      </div>
+      <div style="font-size:10px;color:#ccc;margin-top:10px">独立价值：将组织知识注入 AI 上下文</div>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:#ccc;margin-top:12px;text-align:center">
+    每层可独立部署、独立验证、独立产生 ROI · 不需要等上层完成后才启动下层 ·
+    <a href="https://github.com/lvzhaobo/mumu-coding/tree/main/landing-zone" target="_blank" style="color:#aaa">完整准备清单见 GitHub</a>
+  </p>
+</section>
+
+<!-- ═══════ Framework Relations ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 64px" id="relations">
+  <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:6px">框架关系矩阵</h2>
+  <p style="font-size:13px;color:#aaa;margin-bottom:16px">七个框架在体系中的角色和协作关系。不是独立概念，而是互相咬合的整体。</p>
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden;font-size:13px">
+    <thead><tr style="background:#fafafa"><th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e4e4e0">框架</th><th style="padding:10px 16px;text-align:left;border-bottom:1px solid #e4e4e0;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px">在魔方的位置</th><th style="padding:10px 16px;text-align:left;border-bottom:1px solid #e4e4e0;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px">体系角色</th><th style="padding:10px 16px;text-align:left;border-bottom:1px solid #e4e4e0;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px">回答的核心问题</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">WAF 六维度</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">魔方本身 — 六个面</td><td style="padding:10px 16px;color:#111;font-weight:600;border-bottom:1px solid #f5f5f5" style="font-weight:600">骨架</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">企业 AI Coding 存在哪些治理维度？怎么诊断？</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">E-ACMM 成熟度</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">旋转角度 — 审视的镜头</td><td style="padding:10px 16px;color:#111;font-weight:600;border-bottom:1px solid #f5f5f5">标尺</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">我的团队现在在哪一级？下一步该做什么？</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">Spec 14 文档</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">D1 面上的核心方块</td><td style="padding:10px 16px;color:#111;font-weight:600;border-bottom:1px solid #f5f5f5">核心交付物</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">人和 AI 怎么在同一份规格上协作？</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">G-Ladder</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">魔方从乱到整的还原路径</td><td style="padding:10px 16px;color:#111;font-weight:600;border-bottom:1px solid #f5f5f5">方向</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">下一步能力往哪升级？</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">Context Engineering</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">D2、D4 面的底层逻辑</td><td style="padding:10px 16px;color:#111;font-weight:600;border-bottom:1px solid #f5f5f5">技术基础</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">为什么企业 AI 输出质量不稳定？</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111;border-bottom:1px solid #f5f5f5">Landing Zone</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">积木路 — 从下到上铺设</td><td style="padding:10px 16px;color:#111;font-weight:600;border-bottom:1px solid #f5f5f5">行动指南</td><td style="padding:10px 16px;color:#888;border-bottom:1px solid #f5f5f5">企业引入 AI Coding 第一步先做什么？</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:650;color:#111">编码模式选择</td><td style="padding:10px 16px;color:#888">旋转策略 — 不同场景不同转法</td><td style="padding:10px 16px;color:#111;font-weight:600">决策工具</td><td style="padding:10px 16px;color:#888">当前任务该用哪种编码模式？</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ═══════ CTA ═══════ -->
+<section style="max-width:1300px;margin:0 auto;padding:0 32px 80px" id="start">
+  <h2 style="font-size:20px;font-weight:650;color:#111;margin-bottom:16px">从哪里开始</h2>
+  <div style="display:flex;gap:2px;background:#e4e4e0;border:1px solid #e4e4e0;border-radius:8px;overflow:hidden">
+    <div style="flex:1;background:#fff;padding:28px 24px">
+      <div style="font-size:24px;margin-bottom:8px">🔍</div>
+      <div style="font-size:14px;font-weight:650;color:#111;margin-bottom:4px">自评成熟度</div>
+      <p style="font-size:12px;color:#999;line-height:1.6;margin-bottom:12px">5 级 × 6 维度 × 30 题。15 分钟完成，自动生成诊断报告。知道自己在哪一级，才知道下一步往哪走。</p>
+      <a href="assessment.html" style="font-size:11px;color:#d94f4f;font-weight:600;text-decoration:none">30 题自评 →</a>
+    </div>
+    <div style="flex:1;background:#fff;padding:28px 24px">
+      <div style="font-size:24px;margin-bottom:8px">📋</div>
+      <div style="font-size:14px;font-weight:650;color:#111;margin-bottom:4px">下载 Spec 模板</div>
+      <p style="font-size:12px;color:#999;line-height:1.6;margin-bottom:12px">14 份空白模板 + 618 促销场景填充示例。从 03 立项提案开始，填完一份就能用。</p>
+      <a href="https://github.com/lvzhaobo/mumu-coding/tree/main/spec" target="_blank" style="font-size:11px;color:#d94f4f;font-weight:600;text-decoration:none">GitHub →</a>
+    </div>
+    <div style="flex:1;background:#fff;padding:28px 24px">
+      <div style="font-size:24px;margin-bottom:8px">📖</div>
+      <div style="font-size:14px;font-weight:650;color:#111;margin-bottom:4px">阅读方法论文档</div>
+      <p style="font-size:12px;color:#999;line-height:1.6;margin-bottom:12px">WAF 六维度 + G-Ladder + 上下文工程。理解背后的方法论逻辑，才能根据自己团队的情况做定制。</p>
+      <a href="https://github.com/lvzhaobo/mumu-coding" target="_blank" style="font-size:11px;color:#d94f4f;font-weight:600;text-decoration:none">GitHub 仓库 →</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>MumuCoding · 工具无关的企业 AI Coding 落地方法论</p>
+  <p style="margin-top:4px"><a href="https://github.com/lvzhaobo/mumu-coding" target="_blank">github.com/lvzhaobo/mumu-coding</a></p>
+</footer>
+
+<!-- ═══════ Radar Charts ═══════ -->
+<script>
+(function(){
+const dims = ['D1 意图传递','D2 工具连通','D3 流程嵌入','D4 知识沉淀','D5 治理闭环','D6 组织演进'];
+
+function drawRadar(canvasId, values, color, opts={}) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight || canvas.clientWidth;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+
+  const cx = W / 2, cy = H / 2;
+  const maxR = Math.min(cx, cy) - (opts.small ? 24 : 36);
+  const n = dims.length;
+
+  // Grid
+  for (let ring = 1; ring <= 5; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const r = maxR * ring / 5;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = ring === 5 ? '#e4e4e0' : '#f0f0ed';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle) * maxR, cy + Math.sin(angle) * maxR);
+    ctx.strokeStyle = '#f0f0ed';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  // Data polygon
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) {
+    const idx = i % n;
+    const angle = (Math.PI * 2 * idx / n) - Math.PI / 2;
+    const r = maxR * (values[idx] || 1) / 5;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.fillStyle = color.replace(')', ',0.12)').replace('rgb','rgba');
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Dots
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const r = maxR * (values[i] || 1) / 5;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+  }
+
+  // Labels
+  if (!opts.small) {
+    ctx.fillStyle = '#999'; ctx.font = '11px "PingFang SC", -apple-system, sans-serif'; ctx.textAlign = 'center';
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const r = maxR + 16;
+      ctx.fillText(dims[i].replace('D','').replace(' ','\n'), cx + Math.cos(angle) * r, cy + Math.sin(angle) * r + 3);
+    }
+  }
+}
+
+// Main radar: L2, L3, L4 outlines
+drawRadar('radar-main', [2,2,2,2,2,2], 'rgb(180,180,180)'); // L2 baseline
+drawRadar('radar-main', [3,3,3,3,3,3], 'rgb(180,140,50)');  // L3
+drawRadar('radar-main', [4,4,4,4,4,4], 'rgb(217,79,79)');   // L4
+drawRadar('radar-main', [4.5,3.5,4,3,3.5,4], 'rgb(130,130,130)');
+// Write "L2-L5" labels on main radar
+const mc = document.getElementById('radar-main');
+if (mc) {
+  const dpr2 = window.devicePixelRatio || 1;
+  const w2 = mc.clientWidth, h2 = mc.clientHeight;
+  const ctx2 = mc.getContext('2d');
+  ctx2.font = '10px "PingFang SC", -apple-system, sans-serif';
+  ctx2.fillStyle = '#bbb'; ctx2.textAlign = 'left';
+  ctx2.fillText('L2', 10, h2 - 20);
+  ctx2.fillStyle = '#b8860b'; ctx2.fillText('L3', 10, h2 - 42);
+  ctx2.fillStyle = '#d94f4f'; ctx2.fillText('L4', 10, h2 - 64);
+}
+
+drawRadar('radar-internet', [3,2.8,3.2,2.5,2.8,2.5], 'rgb(217,79,79)', {small:true});
+drawRadar('radar-finance', [2.2,2,2.5,2.8,3,2], 'rgb(180,140,50)', {small:true});
+drawRadar('radar-manufacture', [1.5,1,1.2,1,1.5,1.2], 'rgb(180,180,180)', {small:true});
+drawRadar('radar-native', [3.5,3.5,3.8,3,3.5,3.5], 'rgb(100,180,140)', {small:true});
+})();
+</script>
+
+<!-- ═══════ Three.js ═══════ -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ═══ Cube builder ═══
+function buildCubeScene(elId, opts = {}) {
+  const el = document.getElementById(elId);
+  const W = el.clientWidth, H = el.clientHeight;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#f8f8f5');
+
+  const camera = new THREE.PerspectiveCamera(36, W / H, 0.5, 50);
+  camera.position.set(7, 4.5, 8.5);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  el.appendChild(renderer.domElement);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.08;
+  controls.minDistance = 4.5; controls.maxDistance = 16;
+  controls.maxPolarAngle = Math.PI * 0.75;
+  controls.target.set(0, 0, 0); controls.update();
+  controls._isDragging = false;
+  controls.addEventListener('start', () => { controls._isDragging = true; });
+  controls.addEventListener('end', () => { controls._isDragging = false; });
+
+  scene.add(new THREE.AmbientLight('#ffffff', 2.6));
+  const sun = new THREE.DirectionalLight('#ffffff', 3.5);
+  sun.position.set(8, 14, 6); scene.add(sun);
+  const fill = new THREE.DirectionalLight('#d0d8e0', 1.5);
+  fill.position.set(-4, -1, -3); scene.add(fill);
+
+  const cubeGroup = new THREE.Group(); scene.add(cubeGroup);
+  const size = opts.size || 2.6, divs = 3, gap = 0.07;
+  const s = (size - gap * (divs - 1)) / divs;
+
+  const smallCubes = [];
+  for (let x = 0; x < divs; x++) {
+    for (let y = 0; y < divs; y++) {
+      for (let z = 0; z < divs; z++) {
+        const geo = new THREE.BoxGeometry(s, s, s);
+        const mat = new THREE.MeshStandardMaterial({
+          color: '#e8e8e4', roughness: 0.6, metalness: 0.03,
+          transparent: true, opacity: 0.92,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(
+          (x - (divs - 1) / 2) * (s + gap),
+          (y - (divs - 1) / 2) * (s + gap),
+          (z - (divs - 1) / 2) * (s + gap)
+        );
+        mesh.userData = { x, y, z };
+        // Start invisible for assembly animation
+        mesh.scale.set(0, 0, 0);
+        cubeGroup.add(mesh);
+
+        const edgeGeo = new THREE.EdgesGeometry(geo);
+        const edgeLine = new THREE.LineSegments(edgeGeo,
+          new THREE.LineBasicMaterial({ color: '#aaa', transparent: true, opacity: 0.45 }));
+        mesh.add(edgeLine);
+        smallCubes.push(mesh);
+      }
+    }
+  }
+
+  function getFace(x, y, z) {
+    if (x === 0) return 0; if (x === divs - 1) return 1;
+    if (y === 0) return 2; if (y === divs - 1) return 3;
+    if (z === 0) return 4; if (z === divs - 1) return 5;
+    return -1;
+  }
+
+  function setHighlight(faceIdx) {
+    smallCubes.forEach(mesh => {
+      const fi = getFace(mesh.userData.x, mesh.userData.y, mesh.userData.z);
+      if (fi < 0) return;
+      if (faceIdx === null || fi === faceIdx) {
+        mesh.material.opacity = 0.92;
+        mesh.material.emissive = new THREE.Color('#ffffff');
+        mesh.material.emissiveIntensity = 0.06;
+      } else {
+        mesh.material.opacity = 0.45;
+        mesh.material.emissive = new THREE.Color('#000000');
+        mesh.material.emissiveIntensity = 0;
+      }
+    });
+  }
+  if (!opts.noAutoHighlight) setHighlight(null);
+
+  function onResize() {
+    const w = el.clientWidth, h = el.clientHeight;
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  window.addEventListener('resize', onResize);
+
+  let playing = true;
+  let assembleIdx = 0;
+  let assembleTimer = 0;
+  const countEl = document.getElementById('assemble-count');
+  // Outer cubes first (faces), then inner cubes
+  const faceOrder = [];
+  const innerOrder = [];
+  for (let i = 0; i < smallCubes.length; i++) {
+    const { x, y, z } = smallCubes[i].userData;
+    const fi = getFace(x, y, z);
+    if (fi >= 0) faceOrder.push(i);
+    else innerOrder.push(i);
+  }
+  // Shuffle each group slightly so faces build in scattered chunks
+  function shuffled(arr) { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const assembleOrder = [...shuffled(faceOrder), ...shuffled(innerOrder)];
+
+  function animate(ts) {
+    requestAnimationFrame(animate);
+    controls.update();
+
+    if (!controls._isDragging && opts.autoRotate !== false) {
+      cubeGroup.rotation.y += 0.003;
+    }
+
+    // Assembly animation
+    if (opts.assemble && playing) {
+      if (!assembleTimer) assembleTimer = ts;
+      const elapsed = ts - assembleTimer;
+      const interval = opts.assembleInterval || 1200;
+      const targetIdx = Math.min(Math.floor(elapsed / interval), smallCubes.length);
+
+      while (assembleIdx < targetIdx && assembleIdx < smallCubes.length) {
+        const cubeIdx = assembleOrder[assembleIdx];
+        startAssemble(smallCubes[cubeIdx], ts);
+        assembleIdx++;
+      }
+      if (assembleIdx >= smallCubes.length) {
+        playing = false;
+        if (countEl) countEl.textContent = '27/27 · 完成';
+      }
+      // Update count
+      if (countEl && assembleIdx < smallCubes.length) {
+        countEl.textContent = assembleIdx + '/27';
+      }
+    }
+
+    // Animate scaling — spring-like ease-out
+    smallCubes.forEach(m => {
+      const t = m.userData._scaleTarget || 0;
+      const cs = m.scale.x;
+      const diff = t - cs;
+      if (Math.abs(diff) > 0.001) {
+        // Spring ease: fast at first, slow at end
+        const speed = 0.08 + Math.abs(diff) * 0.15;
+        const ns = cs + diff * speed;
+        m.scale.setScalar(ns);
+        m.material.opacity = 0.45 + ns * 0.55;
+      } else if (Math.abs(diff) > 0) {
+        m.scale.setScalar(t);
+        m.material.opacity = t > 0.5 ? 0.92 : 0.45;
+      }
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  function startAssemble(mesh, ts) {
+    mesh.userData._scaleTarget = 1;
+    mesh.userData._assembleTime = ts;
+  }
+
+  // Start all visible immediately if no assemble animation
+  if (!opts.assemble) {
+    smallCubes.forEach(m => { m.userData._scaleTarget = 1; m.scale.setScalar(1); });
+  }
+
+  // Trigger assembly reset
+  function resetAssembly() {
+    smallCubes.forEach(m => { m.userData._scaleTarget = 0; m.scale.setScalar(0); });
+    assembleIdx = 0;
+    assembleTimer = 0;
+    playing = true;
+  }
+
+  requestAnimationFrame(animate);
+
+  return { scene, camera, renderer, controls, cubeGroup, smallCubes, getFace, setHighlight, onResize, resetAssembly };
+}
+
+// ═══ Hero Cube (large + assembly animation) ═══
+const hero = buildCubeScene('cube-hero', { size: 3.2, autoRotate: true, assemble: true, assembleInterval: 1200 });
+
+// ═══ Tab Cube ═══
+const tab = buildCubeScene('tab-cube', { size: 2.6, autoRotate: false, noAutoHighlight: true, assemble: false });
+// Show all tabs cube blocks immediately
+tab.smallCubes.forEach(m => { m.userData._scaleTarget = 1; m.scale.setScalar(1); });
+
+// ═══ Typewriter ═══
+const typewriterLines = [
+  { dim: 'D1 · 意图传递', text: '需求、边界和验收标准能被准确传递给 AI，形成可复现的人机意图对齐。' },
+  { dim: 'D2 · 工具连通', text: 'AI 安全地连通代码库、数据库、内部 API，权限边界清晰、访问受控。' },
+  { dim: 'D3 · 流程嵌入', text: 'AI 能力嵌入需求评审、开发、测试、代码审查等 SDLC 关键节点。' },
+  { dim: 'D4 · 知识沉淀', text: '规范和决策能跨会话复用。知识的持续性直接决定长期效果。' },
+  { dim: 'D5 · 治理闭环', text: '质量、安全、审计与度量形成可执行的管理闭环——最容易系统性翻车的维度。' },
+  { dim: 'D6 · 组织演进', text: 'AI Coding 能力从个人复制到团队与组织，形成可推广的资产和清晰的责任归属。' },
+];
+
+const twBox = document.getElementById('typewriter-box');
+let lineIdx = 0;
+let charIdx = 0;
+let currentLineEl = null;
+let currentTextEl = null;
+let cursorEl = null;
+
+function createLineEl() {
+  const el = document.createElement('div');
+  el.className = 'typewriter-line';
+  el.style.opacity = '0';
+  twBox.appendChild(el);
+
+  const dimEl = document.createElement('span');
+  dimEl.className = 'tw-dim';
+  el.appendChild(dimEl);
+
+  const textEl = document.createElement('span');
+  textEl.className = 'tw-text';
+  el.appendChild(textEl);
+
+  const cursor = document.createElement('span');
+  cursor.className = 'tw-cursor';
+  el.appendChild(cursor);
+
+  return { el, dimEl, textEl, cursor };
+}
+
+function startLine(index) {
+  if (index >= typewriterLines.length) {
+    // All done — cycle: fade out all, restart
+    setTimeout(() => {
+      twBox.innerHTML = '';
+      lineIdx = 0;
+      charIdx = 0;
+      currentLineEl = null;
+      startTypewriter();
+    }, 4000);
+    return;
+  }
+
+  const line = typewriterLines[index];
+  const { el, dimEl, textEl, cursor } = createLineEl();
+  currentLineEl = el;
+  currentTextEl = textEl;
+  cursorEl = cursor;
+
+  el.style.opacity = '1';
+  dimEl.textContent = line.dim;
+  charIdx = 0;
+
+  function typeChar() {
+    if (charIdx < line.text.length) {
+      textEl.textContent += line.text[charIdx];
+      charIdx++;
+      setTimeout(typeChar, 35 + Math.random() * 25);
+    } else {
+      // Done typing — remove cursor
+      setTimeout(() => {
+        if (cursorEl) cursorEl.style.display = 'none';
+        // Start next line after delay
+        setTimeout(() => startLine(index + 1), 2200);
+      }, 600);
+    }
+  }
+  typeChar();
+}
+
+function startTypewriter() {
+  startLine(0);
+}
+
+// Start after initial delay
+setTimeout(startTypewriter, 800);
+
+// ═══ Tab switching ═══
+let currentDim = 0;
+function switchTab(dimIdx) {
+  currentDim = dimIdx;
+  tab.setHighlight(dimIdx);
+
+  const targets = [
+    { x: 0, y: Math.PI * 0.5 },
+    { x: 0, y: -Math.PI * 0.5 },
+    { x: -Math.PI * 0.5, y: 0 },
+    { x: Math.PI * 0.5, y: 0 },
+    { x: 0, y: Math.PI },
+    { x: 0, y: 0 },
+  ];
+  const t = targets[dimIdx];
+  tab.cubeGroup.rotation.set(t.x, t.y, 0);
+  tab.controls.target.set(0, 0, 0);
+  tab.controls.update();
+
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === dimIdx);
+  });
+  document.querySelectorAll('.tab-panel').forEach((p, i) => {
+    p.classList.toggle('active', i === dimIdx);
+  });
+}
+
+document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+  btn.addEventListener('click', () => switchTab(i));
+});
+
+switchTab(0);
+</script>
+
+</body>
+</html>
