@@ -1,0 +1,14 @@
+{
+  "name": "mumuspec",
+  "version": "0.1.0",
+  "description": "MumuSpec CLI — AI Coding 企业 Spec 驱动开发工具链。一条命令生成 Spec、校验 Spec、联动 Spec。",
+  "keywords": ["spec", "ai-coding", "spec-driven", "cli", "mumuspec"],
+  "license": "MIT",
+  "author": "MumuLab",
+  "repository": "https://github.com/lvzhaobo/mumu-coding",
+  "bin": {
+    "mumuspec": "./bin/mumuspec.js",
+    "create-mumuspec": "./bin/create-mumuspec.js"
+  },
+  "engines": { "node": ">=16" }
+}
